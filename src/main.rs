@@ -136,8 +136,6 @@ impl Draw for Ball {
 
         mq::draw_text(
             &format!("v: <{:.2},{:.2}>", self.velocity.x, self.velocity.y),
-            // self.pos.x - BALL_RADIUS * 0.1,
-            // self.pos.y - BALL_RADIUS * 0.5,
             10.,
             50.,
             15.,
