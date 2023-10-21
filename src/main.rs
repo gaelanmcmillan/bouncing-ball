@@ -10,7 +10,7 @@ use macroquad::prelude as mq;
 const BALL_RADIUS: f32 = 25.;
 const BALL_COLOUR: mq::Color = mq::WHITE;
 const TICK_LEN_SECONDS: f64 = 0.0167;
-const DAMPENING_RATIO: f32 = 0.9;
+const DAMPENING_RATIO: f32 = 0.8;
 
 fn draw_arrow(
     x1: f32,
@@ -106,10 +106,16 @@ struct Ball {
 impl Tick for Ball {
     fn on_tick(&mut self, tick_len_seconds: f64) -> () {
         // update velocity
-        self.velocity.y += (tick_len_seconds * EARTH_ACCELERATION_M_PER_S * 3.) as f32;
+        self.velocity.y += (tick_len_seconds * EARTH_ACCELERATION_M_PER_S * 6.) as f32;
         self.pos += self.velocity * tick_len_seconds as f32;
-        if self.pos.y >= 500. {
+        if self.pos.y > 500. {
+            self.pos.y = 500.;
             self.velocity.y *= -DAMPENING_RATIO;
+        }
+
+        if self.pos.x > 500. || self.pos.x < 200. {
+            self.pos.x = self.pos.x.clamp(200., 500.);
+            self.velocity.x *= -DAMPENING_RATIO;
         }
     }
 }
@@ -126,6 +132,16 @@ impl Draw for Ball {
             1.,
             mq::BLUE,
             0.2,
+        );
+
+        mq::draw_text(
+            &format!("v: <{:.2},{:.2}>", self.velocity.x, self.velocity.y),
+            // self.pos.x - BALL_RADIUS * 0.1,
+            // self.pos.y - BALL_RADIUS * 0.5,
+            10.,
+            50.,
+            15.,
+            mq::RED,
         );
     }
 }
@@ -153,7 +169,7 @@ fn draw_dbg_text(time: f64, ticks_so_far: usize, frames_so_far: usize) -> () {
 async fn main() {
     let mut ball = Ball {
         pos: glam::Vec2 { x: 400., y: 100. },
-        velocity: glam::Vec2::ZERO,
+        velocity: glam::Vec2::X * 80.,
     };
     let mut simulation = Simulation::new(TICK_LEN_SECONDS);
     simulation.add_object(&mut ball);
