@@ -181,7 +181,7 @@ fn rand_vec2(xlow: f32, xhigh: f32, ylow: f32, yhigh: f32) -> mq::Vec2 {
     )
 }
 
-#[macroquad::main("Fixed Timestep")]
+#[macroquad::main("Bouncing Balls")]
 async fn main() {
     let ball = Ball {
         pos: mq::Vec2 { x: 400., y: 100. },
