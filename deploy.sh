@@ -1,0 +1,1 @@
+cargo build --release --target wasm32-unknown-unknown && cp target/wasm32-unknown-unknown/release/bouncing_ball.wasm wasm/bouncing_ball.wasm && git add wasm && git commit -m "deploy wasm build" && git subtree push --prefix wasm origin gh-pages

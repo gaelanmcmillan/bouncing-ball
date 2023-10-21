@@ -2,13 +2,17 @@ use std::f32::consts::PI;
 
 use engine::{
     physics::EARTH_ACCELERATION_M_PER_S,
-    simulator::{Draw, Simulation, Tick, TickDraw},
+    simulator::{Draw, Expire, Simulation, Tick, TickDrawExpire},
 };
 
 use macroquad::prelude as mq;
 
-const TICK_LEN_SECONDS: f64 = 0.0167;
-const DAMPENING_RATIO: f32 = 0.8;
+const BALL_EXPIRY_TIME: f64 = 2.;
+const FLOOR_Y: f32 = 500.;
+const TICK_LEN_SECONDS: f64 = 0.0167 / 2.;
+const GRAVITY_MULTIPLIER: f64 = 40.;
+const DAMPENING_MULTIPLIER: f32 = 0.8;
+const ARROW_LEN_MULTIPLIER: f32 = 0.2;
 
 fn draw_arrow(
     x1: f32,
@@ -49,11 +53,15 @@ mod engine {
             fn on_draw(&self);
         }
 
-        pub trait TickDraw: Tick + Draw {}
+        pub trait Expire {
+            fn is_expired(&self) -> bool;
+        }
+
+        pub trait TickDrawExpire: Tick + Draw + Expire {}
 
         pub struct Simulation {
             seconds_per_tick: f64,
-            objects: Vec<Box<dyn TickDraw>>,
+            objects: Vec<Box<dyn TickDrawExpire>>,
             tick_count: usize,
         }
 
@@ -89,7 +97,11 @@ mod engine {
                 self.objects.iter().for_each(|o| o.on_draw())
             }
 
-            pub fn add_object(&mut self, boxed: Box<dyn TickDraw>) {
+            pub fn do_handle_expiry(&mut self) {
+                self.objects.retain(|o| !o.is_expired());
+            }
+
+            pub fn add_object(&mut self, boxed: Box<dyn TickDrawExpire>) {
                 self.objects.push(boxed);
             }
         }
@@ -105,36 +117,60 @@ struct Ball {
     velocity: mq::Vec2,
     radius: f32,
     color: mq::Color,
+    time_on_floor: f64,
 }
 
 impl Tick for Ball {
     fn on_tick(&mut self, tick_len_seconds: f64) {
         // update velocity
-        self.velocity.y += (tick_len_seconds * EARTH_ACCELERATION_M_PER_S * 6.) as f32;
+        self.velocity.y +=
+            (tick_len_seconds * EARTH_ACCELERATION_M_PER_S * GRAVITY_MULTIPLIER) as f32;
         self.pos += self.velocity * tick_len_seconds as f32;
-        if self.pos.y > 500. {
-            self.pos.y = 500.;
-            self.velocity.y *= -DAMPENING_RATIO;
+        if self.pos.y > FLOOR_Y {
+            self.pos.y = FLOOR_Y;
+            self.velocity.y *= -DAMPENING_MULTIPLIER;
+            self.time_on_floor += tick_len_seconds;
         }
 
         if self.pos.x > 500. || self.pos.x < 200. {
             self.pos.x = self.pos.x.clamp(200., 500.);
-            self.velocity.x *= -DAMPENING_RATIO;
+            self.velocity.x *= -DAMPENING_MULTIPLIER;
         }
     }
 }
 
+fn color_with_alpha(color: mq::Color, a: f32) -> mq::Color {
+    mq::Color {
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        a,
+    }
+}
+
+impl Ball {
+    fn get_alpha(&self) -> f32 {
+        ((BALL_EXPIRY_TIME - self.time_on_floor) / BALL_EXPIRY_TIME) as f32
+    }
+}
 impl Draw for Ball {
     fn on_draw(&self) {
-        mq::draw_circle(self.pos.x, self.pos.y, self.radius, self.color);
+        let alpha = self.get_alpha();
+        mq::draw_circle(
+            self.pos.x,
+            self.pos.y,
+            self.radius,
+            color_with_alpha(self.color, alpha),
+        );
         let circle_center = self.pos;
+        let scaled_velocity = self.velocity * ARROW_LEN_MULTIPLIER;
         draw_arrow(
             circle_center.x,
             circle_center.y,
-            circle_center.x + self.velocity.x,
-            circle_center.y + self.velocity.y,
+            circle_center.x + scaled_velocity.x,
+            circle_center.y + scaled_velocity.y,
             1.,
-            mq::BLUE,
+            color_with_alpha(mq::BLUE, alpha),
             0.2,
         );
 
@@ -148,7 +184,13 @@ impl Draw for Ball {
     }
 }
 
-impl TickDraw for Ball {}
+impl Expire for Ball {
+    fn is_expired(&self) -> bool {
+        self.time_on_floor >= BALL_EXPIRY_TIME
+    }
+}
+
+impl TickDrawExpire for Ball {}
 
 fn draw_dbg_text(time: f64, ticks_so_far: usize, frames_so_far: usize, object_count: usize) {
     mq::draw_text(
@@ -188,6 +230,7 @@ async fn main() {
         velocity: mq::Vec2::X * 80.,
         radius: 15.0,
         color: mq::WHITE,
+        time_on_floor: 0.,
     };
     let mut simulation = Simulation::new(TICK_LEN_SECONDS);
     simulation.add_object(Box::from(ball));
@@ -207,12 +250,16 @@ async fn main() {
                     mq::rand::gen_range(100, 255),
                     255,
                 ),
+                time_on_floor: 0.,
             };
             simulation.add_object(Box::from(b));
         });
         // Handle Ticks
         let time = mq::get_time();
         simulation.do_tick(time);
+
+        // Handle Expiry
+        simulation.do_handle_expiry();
 
         // Handle Drawing
         mq::clear_background(mq::BLACK);
