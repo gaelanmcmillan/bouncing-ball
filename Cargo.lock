@@ -83,7 +83,6 @@ dependencies = [
 name = "fixed_timestep"
 version = "0.1.0"
 dependencies = [
- "glam 0.24.2",
  "macroquad",
 ]
 
@@ -112,12 +111,6 @@ name = "glam"
 version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "518faa5064866338b013ff9b2350dc318e14cc4fcd6cb8206d7e7c9886c98815"
-
-[[package]]
-name = "glam"
-version = "0.24.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5418c17512bdf42730f9032c74e1ae39afc408745ebb2acf72fbc4691c17945"
 
 [[package]]
 name = "hashbrown"
@@ -156,7 +149,7 @@ checksum = "a0bf249d79f5080e200334fe30ffca25582d682ee2e180768ad7f121ba9f8caa"
 dependencies = [
  "bumpalo",
  "fontdue",
- "glam 0.21.3",
+ "glam",
  "image",
  "macroquad_macro",
  "miniquad",

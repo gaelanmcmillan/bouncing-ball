@@ -24,11 +24,11 @@ fn draw_arrow(
     mq::draw_line(x1, y1, x2, y2, thickness, color);
     // arrow head
     let tip_theta: f32 = PI / 6. - PI;
-    let tail_pos = glam::vec2(x1, y1);
-    let tip_pos = glam::vec2(x2, y2);
+    let tail_pos = mq::vec2(x1, y1);
+    let tip_pos = mq::vec2(x2, y2);
     let tip_from_origin = tip_pos - tail_pos;
-    let a_unit = glam::Vec2::from_angle(tip_theta);
-    let b_unit = glam::Vec2::from_angle(-tip_theta);
+    let a_unit = mq::Vec2::from_angle(tip_theta);
+    let b_unit = mq::Vec2::from_angle(-tip_theta);
 
     let a = a_unit.rotate(tip_from_origin) * head_ratio + tip_pos;
     let b = b_unit.rotate(tip_from_origin) * head_ratio + tip_pos;
@@ -99,8 +99,8 @@ mod engine {
 }
 
 struct Ball {
-    pos: glam::Vec2,
-    velocity: glam::Vec2,
+    pos: mq::Vec2,
+    velocity: mq::Vec2,
 }
 
 impl Tick for Ball {
@@ -168,8 +168,8 @@ fn draw_dbg_text(time: f64, ticks_so_far: usize, frames_so_far: usize) -> () {
 #[macroquad::main("Fixed Timestep")]
 async fn main() {
     let mut ball = Ball {
-        pos: glam::Vec2 { x: 400., y: 100. },
-        velocity: glam::Vec2::X * 80.,
+        pos: mq::Vec2 { x: 400., y: 100. },
+        velocity: mq::Vec2::X * 80.,
     };
     let mut simulation = Simulation::new(TICK_LEN_SECONDS);
     simulation.add_object(&mut ball);
