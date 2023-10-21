@@ -123,7 +123,7 @@ impl Draw for Ball {
             circle_center.y,
             circle_center.x + self.velocity.x,
             circle_center.y + self.velocity.y,
-            3.,
+            1.,
             mq::BLUE,
             0.2,
         );
